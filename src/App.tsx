@@ -118,16 +118,16 @@ export default function App() {
   return (
     
     <div className="bg-black w-screen h-screen flex  flex-col ">
-      <div className=" flex flex-row  justify-between m-2">
+      <div className=" flex md:flex-row flex-col   justify-between m-2">
         <div>  
   
-          <div className="text-white md:ml-10 text-2xl p-2 ">Roomid : {inRoom ? roomId: "none"}</div>
+          <div className="text-white md:ml-10 text-2xl p-2  flex items-center justify-center">Roomid : {inRoom ? roomId: "none"}</div>
           
         </div>
-        <div className=" " >  
+        <div className=" justify-between flex" >  
         <Popover open={openJoin} onOpenChange={setOpenJoin}>
           <PopoverTrigger className="text-white">
-            <Button  className="bg-gray-300 m-2  text-black cursor-pointer hover:bg-gray-50">
+            <Button  className="bg-gray-300 m-1  text-black cursor-pointer hover:bg-gray-50">
               Join Room
             </Button>
           </PopoverTrigger>
