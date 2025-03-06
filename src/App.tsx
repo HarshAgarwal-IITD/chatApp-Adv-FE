@@ -3,31 +3,41 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Input } from "./components/ui/input";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 
 
-export default function ChatApp() {
-  const [messages, setMessages] = useState<string[]>([]);
+
+export default function App() {
+  interface Message{
+    type:'self'|'member'|'dialogue',
+    message:String
+  }
+  const [messages, setMessages] = useState<Message[]>([]);
+  const[roomId,setRoomId]= useState<string>();
   //@ts-ignore
   const wsRef= useRef();
+  const [inRoom , setInRoom] = useState(false);
   const [input, setInput] = useState("");
+  const [openJoin, setOpenJoin] = useState(false);
+  const [openExit, setOpenExit] = useState(false);
   const lastMessageRef = useRef<HTMLDivElement | null>(null);
   
   useEffect(()=>{
      const ws = new WebSocket('http://localhost:8080');
     ws.onmessage=(e)=>{
- 
-     setMessages(m=>[...m,e.data])
+     
+      const parsedMessage=JSON.parse(e.data) ;
+     setMessages(m=>[...m,{type:parsedMessage.type, message:parsedMessage.message}])
+    
      
     }
     wsRef.current=ws;
-    ws.onopen=()=>{
-      ws.send(JSON.stringify({
-        type:'join',
-        payload:{
-          roomId:"room1"
-        }
-      }))
-    }
+    
     return () => {
       ws.close();
     };
@@ -37,6 +47,11 @@ export default function ChatApp() {
   }, [messages]);
 
   const sendMessage = () => {
+    if(!inRoom){
+      alert('you need to be in a room  to send messages')
+      return;
+
+    }
     if (input.trim()) {
       
       //@ts-ignore
@@ -47,15 +62,115 @@ export default function ChatApp() {
           message:input
         }
       }));
+
+      setMessages(m=>[...m,{type:'self',message:input}])
+      
       setInput("");
     }
    
     
   };
+  const joinRoom = () => {
+    //if in a room check
+    if(inRoom){
+      alert('already in a room exit the room first')
+      return
+    }
+    if (roomId?.trim()) {
+      onJoin(); // Call the function to handle room joining
+ 
+      setOpenJoin(false); // Close the popover
+    }
+  };
+  const onJoin=()=>{
+//@ts-ignore
+    wsRef.current.send(JSON.stringify({
+      type:'join',
+      payload:{
+        roomId:roomId,
+      }
+        })
+      
+      )
+      setInRoom(true);
+      }
+
+  const onExit = () =>{
+    if(!inRoom){
+      alert('you need to be in a room first to exit')
+      return
+    }
+    //@ts-ignore
+    wsRef.current.send(JSON.stringify({
+      type:'exit',
+      payload:{
+        roomId:roomId,
+      }
+        })
+      
+      )
+      setOpenExit(false)
+      setInRoom(false);
+
+
+  }
 
   return (
     
-    <div className="bg-black w-screen h-screen flex  ">
+    <div className="bg-black w-screen h-screen flex  flex-col ">
+      <div className=" flex justify-between m-2">
+        <div>  
+          <CardContent className="flex flex-col p-0" >
+          <div className="text-white ml-10 text-2xl p-2 ">Roomid : {inRoom ? roomId: "none"}</div>
+          </CardContent>
+        </div>
+        <div>  
+        <Popover open={openJoin} onOpenChange={setOpenJoin}>
+          <PopoverTrigger className="text-white">
+            <Button  className="bg-gray-300 m-2 text-black cursor-pointer hover:bg-gray-50">
+              Join Room
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="bg-gray-300 p-2 rounded-lg mr-0">
+            <div className="flex   gap-2">
+              <Input
+                value={roomId}
+                onChange={(e)=>{setRoomId(e.target.value)}}
+                placeholder="Enter Room ID"
+                className="text-black p-2 rounded-md focus:border-black"
+              />
+            
+              <Button onClick={joinRoom} className="bg-black text-white ">
+                Join
+              </Button>
+            </div>
+          </PopoverContent>
+        </Popover>
+
+        <Popover open={openExit} onOpenChange={setOpenExit}>
+          <PopoverTrigger className="text-white">
+          <Button className="bg-gray-300 m-2 text-black cursor-pointer hover:bg-gray-50 ">Exit Room</Button>
+          </PopoverTrigger>
+          <PopoverContent className="bg-gray-300 p-2 w-fit rounded-lg mr-0">
+            <div className="flex flex-col items-center  gap-2">
+            <div className="p-2">You want to exit....? </div>
+            <div>
+            <Button onClick={onExit} className="bg-black mr-2 text-white ">
+                Exit
+              </Button>
+              <Button onClick={()=>setOpenExit} className="bg-white text-black ">
+                cancel
+              </Button>
+            </div>
+            
+            </div>
+          </PopoverContent>
+        </Popover>
+      
+        </div>
+     
+      </div>
+     
 
     <div className="max-w-md w-2xl mx-auto my-auto p-4 bg-gray-300 space-y-4 rounded-2xl ">
       {/* Messages Display */}
@@ -63,8 +178,12 @@ export default function ChatApp() {
         <ScrollArea className="h-full p-2 ">
           <CardContent className="flex flex-col p-0" >
             {messages.map((msg, index) => (
-              <div key={index} ref={index === messages.length - 1 ? lastMessageRef : null} className="p-2 self-end ml-auto w-fit bg-black text-white rounded-md mb-2">
-                {msg}
+              <div key={index} ref={index === messages.length - 1 ? lastMessageRef : null} className={`p-2 
+               ${msg.type === "dialogue" ? "self-center m-auto bg-gray-300 text-black" : ""}
+                ${msg.type === "self" ? "self-end bg-black text-white" : ""}
+                ${msg.type === "member" ? "self-start mr-auto  bg-gray-500 text-black" : ""}
+               w-fit rounded-md mb-2`}>
+                {msg.message}
               </div>
             ))}
           </CardContent>
@@ -77,7 +196,9 @@ export default function ChatApp() {
         value={input}
         onChange={(e) => setInput(e.target.value)}
         placeholder="Type a message..."
-        className="bg-black  border-black text-white border-0"
+     className="bg-black text-white border-0 focus:border-black focus:ring-0
+      focus:ring-transparent focus:outline-none focus-visible:border-black"
+
         onKeyDown={(e) => {
           if (e.key === "Enter" && !e.shiftKey) {  // Check if Enter is pressed without Shift
             e.preventDefault();  // Prevents new line
