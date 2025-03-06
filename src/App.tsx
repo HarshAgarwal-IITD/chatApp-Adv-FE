@@ -118,16 +118,16 @@ export default function App() {
   return (
     
     <div className="bg-black w-screen h-screen flex  flex-col ">
-      <div className=" flex justify-between m-2">
+      <div className=" flex flex-row  justify-between m-2">
         <div>  
-          <CardContent className="flex flex-col p-0" >
-          <div className="text-white ml-10 text-2xl p-2 ">Roomid : {inRoom ? roomId: "none"}</div>
-          </CardContent>
+  
+          <div className="text-white md:ml-10 text-2xl p-2 ">Roomid : {inRoom ? roomId: "none"}</div>
+          
         </div>
-        <div>  
+        <div className=" " >  
         <Popover open={openJoin} onOpenChange={setOpenJoin}>
           <PopoverTrigger className="text-white">
-            <Button  className="bg-gray-300 m-2 text-black cursor-pointer hover:bg-gray-50">
+            <Button  className="bg-gray-300 m-2  text-black cursor-pointer hover:bg-gray-50">
               Join Room
             </Button>
           </PopoverTrigger>
@@ -172,7 +172,7 @@ export default function App() {
       </div>
      
 
-    <div className="max-w-md w-2xl mx-auto my-auto p-4 bg-gray-300 space-y-4 rounded-2xl ">
+    <div className="max-w-screen w-2xl mx-auto  p-4 bg-gray-300 space-y-4 md:rounded-2xl ">
       {/* Messages Display */}
       <Card className="h-96 bg-gray-100 border-0 ">
         <ScrollArea className="h-full p-2 ">
