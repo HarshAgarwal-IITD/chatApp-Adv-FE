@@ -28,7 +28,7 @@ export default function App() {
   const lastMessageRef = useRef<HTMLDivElement | null>(null);
   
   useEffect(()=>{
-     const ws = new WebSocket('http://localhost:8080');
+     const ws = new WebSocket('ws://chat-be-production-0b5b.up.railway.app/');
     ws.onmessage=(e)=>{
      
       const parsedMessage=JSON.parse(e.data) ;
