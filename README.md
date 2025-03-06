@@ -1,4 +1,4 @@
-Hosted @ secondbrain-fe-production.up.railway.app
+Hosted @ https://secondbrain-fe-production.up.railway.app
 # React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
