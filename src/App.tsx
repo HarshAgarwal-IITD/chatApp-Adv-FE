@@ -4,44 +4,133 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "./components/ui/input";
+import Signin from "./AppComponents/Signin";
+import Signup from "./AppComponents/Signup";
+import Logout from "./AppComponents/Logout";
+import axios from "axios"
+
+
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
+import { BACKEND_URL, ROOM_ROUTE } from "./utils/utils";
+import useMessage from "./hooks/useMessages";
+
+
+
+
+
+
 
 
 
 export default function App() {
   interface Message{
     type:'self'|'member'|'dialogue',
-    message:String
+    message:String,
+    
   }
   const [messages, setMessages] = useState<Message[]>([]);
   const[roomId,setRoomId]= useState<string>();
-  //@ts-ignore
-  const wsRef= useRef();
   const [inRoom , setInRoom] = useState(false);
   const [input, setInput] = useState("");
   const [openJoin, setOpenJoin] = useState(false);
   const [openExit, setOpenExit] = useState(false);
-  const lastMessageRef = useRef<HTMLDivElement | null>(null);
-  
-  useEffect(()=>{
-     const ws = new WebSocket('wss://chat-be-production-0b5b.up.railway.app/');
-    ws.onmessage=(e)=>{
-     
-      const parsedMessage=JSON.parse(e.data) ;
-     setMessages(m=>[...m,{type:parsedMessage.type, message:parsedMessage.message}])
-    
-     
+  const [openCreate, setOpenCreate] = useState(false);
+  const [login , setLogin]=useState(false);
+  const [username,setUsername]= useState<string>();
+  const [roomTitle,setRoomTitle]= useState<string>();
+  const messageUse = useMessage({ roomId:roomTitle as string }); // ✅ Use the hook directly
+
+  useEffect(() => {
+ 
+    // When new messages are fetched from the hook, merge them with existing state
+    //@ts-ignore
+    if (messageUse) {
+      //@ts-ignore
+      setMessages(messageUse); // ✅ Update state only if messages are fetched
     }
-    wsRef.current=ws;
-    
-    return () => {
-      ws.close();
+  }, [messageUse]);
+  
+
+  const lastMessageRef = useRef<HTMLDivElement | null>(null);
+  //@ts-ignore
+  const wsRef= useRef<WebSocket>();
+  
+  //check for username
+  useEffect(() => {
+    const storedUsername = localStorage.getItem("username");
+    if (storedUsername) setUsername(storedUsername);
+
+    const storedRoomId = localStorage.getItem("roomId");
+    if (storedRoomId) {
+      setRoomTitle(storedRoomId);
+      setInRoom(true);
+    }
+  }, []);
+    // ✅ Save to localStorage when roomTitle changes
+    useEffect(() => {
+      if (roomTitle) {
+        localStorage.setItem("roomId", roomTitle);
+      } else {
+        localStorage.removeItem("roomId");
+      }
+    }, [roomTitle]);
+
+  useEffect(() => {
+    if (username) {
+      localStorage.setItem("username", username as string);
+    } else {
+      localStorage.removeItem("username");
+    }
+  }, [username]);
+
+  
+ 
+//check if logged in 
+useEffect(()=>{
+ 
+    const token = document.cookie
+      .split("; ")
+      .find((row) => row.startsWith("token="))
+      ?.split("=")[1];
+    if(token){
+      setLogin(true)
+    }
+
+  
+})
+ 
+useEffect(() => {
+  
+
+ if(inRoom)
+   { 
+    const ws = new WebSocket('ws://localhost:3000/');
+
+    ws.onopen = () => console.log('WebSocket connected');
+
+    ws.onmessage = (e) => {
+      const parsedMessage = JSON.parse(e.data);
+      setMessages(m => [...m, { type: parsedMessage.type, message: parsedMessage.message }]);
     };
-  },[])
+
+    ws.onerror = (err) => {
+      console.error('WebSocket error:', err);
+    };
+
+   
+
+    wsRef.current = ws;}
+  
+
+  // ✅ Close WebSocket when user exits room or logs out
+  
+}, [inRoom]); // ✅ Depend only on state to open/close connection
+
+
   useEffect(() => {
     lastMessageRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
@@ -52,13 +141,17 @@ export default function App() {
       return;
 
     }
+    if (!wsRef.current) {
+      alert('WebSocket connection not established');
+      return;
+    }
     if (input.trim()) {
       
-      //@ts-ignore
+      
       wsRef.current.send(JSON.stringify({
         type:'chat',
         payload:{
-          roomId:"room1",
+          roomId:roomTitle,
           message:input
         }
       }));
@@ -70,6 +163,37 @@ export default function App() {
    
     
   };
+
+  const createRoom=async()=>{
+    if(inRoom){
+      alert("already in a room ")
+      return;
+    }
+    if (roomId?.trim()) {
+      try{ const response = await axios.post(BACKEND_URL+ROOM_ROUTE+"create",{
+        roomName:roomId
+      },
+        {withCredentials:true}
+      )
+      console.log(response);
+      setInRoom(true);
+      alert("Room created successfully");
+      setRoomTitle(roomId)
+
+      setOpenCreate(false);
+     
+    }
+      catch(e){
+        alert('error creating room see console')
+        console.error("error",e)
+      }
+  
+ 
+
+    }
+
+  }
+  
   const joinRoom = () => {
     //if in a room check
     if(inRoom){
@@ -79,52 +203,115 @@ export default function App() {
     if (roomId?.trim()) {
       onJoin(); // Call the function to handle room joining
  
-      setOpenJoin(false); // Close the popover
+     
     }
   };
-  const onJoin=()=>{
+  const onJoin=async()=>{
+   try{ const response = await axios.post(BACKEND_URL+ROOM_ROUTE+roomId+"/join",
+      {withCredentials:true}
+    )
+    console.log(response);
+    setInRoom(true);
+    setRoomTitle(roomId);
+    setOpenJoin(false); // Close the popover
+    
+   
+  }
+    catch(e){
+      alert('error joining room see console')
+      console.error("error",e)
+    }
+  }
 //@ts-ignore
-    wsRef.current.send(JSON.stringify({
-      type:'join',
-      payload:{
-        roomId:roomId,
-      }
-        })
-      
-      )
-      setInRoom(true);
-      }
+    
 
-  const onExit = () =>{
+  const onExit =async () =>{
     if(!inRoom){
       alert('you need to be in a room first to exit')
       return
     }
-    //@ts-ignore
-    wsRef.current.send(JSON.stringify({
-      type:'exit',
-      payload:{
-        roomId:roomId,
-      }
-        })
-      
-      )
-      setOpenExit(false)
+    try {
+      const response = await axios.delete(
+        BACKEND_URL + ROOM_ROUTE + roomId + "/exit",
+        { withCredentials: true }
+      );
+
+      console.log(response);
       setInRoom(false);
+      setRoomTitle(undefined);
+     
+        wsRef.current.close();
+      
+      alert("Exited room successfully");
 
+      // Remove roomId from localStorage
+      localStorage.removeItem("roomId");
+     
 
-  }
+      setOpenExit(false);
+    } catch (error) {
+      console.error("Error exiting room:", error);
+      alert("Error exiting room. See console for details.");
+    }
+ }
+
+ const handleLogout = () => {
+  
+    wsRef.current.close();
+
+  setLogin(false);
+  setUsername(undefined);
+  setRoomTitle(undefined); // ✅ Clear roomTitle on logout
+  setInRoom(false);
+  localStorage.removeItem("roomId");
+  localStorage.removeItem("username");
+};
+
 
   return (
     
     <div className="bg-black w-screen h-screen flex  flex-col ">
+     
       <div className=" flex md:flex-row flex-col   justify-between m-2">
+      <div>
+    {!login && <Signup setLogin={setLogin} setUsername={setUsername}  />}
+    {!login &&   <Signin setLogin={setLogin} setUsername={setUsername} />}
+    {login &&   <Logout setLogin={setLogin} setUsername={setUsername} handleLogout={handleLogout} />}
+   {/* <Form text="Sign In"/> */}
+      </div>
+    { login && <div>  
+  
+          <div className="text-blue-600 md:ml-10 text-2xl p-2  flex items-center justify-center">Welcome {username}</div>
+          
+        </div>}
+     
         <div>  
   
-          <div className="text-white md:ml-10 text-2xl p-2  flex items-center justify-center">Roomid : {inRoom ? roomId: "none"}</div>
+          <div className="text-white md:ml-10 text-2xl p-2  flex items-center justify-center">Roomid : {inRoom ? roomTitle: "none"}</div>
           
         </div>
         <div className=" justify-between flex" >  
+        <Popover open={openCreate} onOpenChange={setOpenCreate}>
+          <PopoverTrigger className="text-white">
+            <Button  className="bg-gray-300 m-1  text-black cursor-pointer hover:bg-gray-50">
+              Create Room
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="bg-gray-300 p-2 rounded-lg mr-0">
+            <div className="flex   gap-2">
+              <Input
+                value={roomId}
+                onChange={(e)=>{setRoomId(e.target.value)}}
+                placeholder="Enter Room ID"
+                className="text-black p-2 rounded-md focus:border-black"
+              />
+            
+              <Button onClick={createRoom} className="bg-black cursor-pointer text-white ">
+                Create
+              </Button>
+            </div>
+          </PopoverContent>
+        </Popover>
         <Popover open={openJoin} onOpenChange={setOpenJoin}>
           <PopoverTrigger className="text-white">
             <Button  className="bg-gray-300 m-1  text-black cursor-pointer hover:bg-gray-50">
@@ -140,7 +327,7 @@ export default function App() {
                 className="text-black p-2 rounded-md focus:border-black"
               />
             
-              <Button onClick={joinRoom} className="bg-black text-white ">
+              <Button onClick={joinRoom} className="bg-black text-white cursor-pointer ">
                 Join
               </Button>
             </div>
@@ -155,10 +342,10 @@ export default function App() {
             <div className="flex flex-col items-center  gap-2">
             <div className="p-2">You want to exit....? </div>
             <div>
-            <Button onClick={onExit} className="bg-black mr-2 text-white ">
+            <Button onClick={onExit} className="bg-black mr-2 cursor-pointer text-white ">
                 Exit
               </Button>
-              <Button onClick={()=>setOpenExit} className="bg-white text-black ">
+              <Button onClick={()=>setOpenExit(false)} className="bg-white cursor-pointer text-black ">
                 cancel
               </Button>
             </div>
@@ -172,16 +359,16 @@ export default function App() {
       </div>
      
 
-    <div className="max-w-screen w-2xl mx-auto  p-4 bg-gray-300 space-y-4 md:rounded-2xl ">
+    <div className="max-w-screen w-2xl mx-auto  p-4 bg-gray-100 space-y-4 md:rounded-2xl ">
       {/* Messages Display */}
-      <Card className="h-96 bg-gray-100 border-0 ">
+      <Card className="h-96 bg-gray-300 border-0 ">
         <ScrollArea className="h-full p-2 ">
           <CardContent className="flex flex-col p-0" >
             {messages.map((msg, index) => (
               <div key={index} ref={index === messages.length - 1 ? lastMessageRef : null} className={`p-2 
-               ${msg.type === "dialogue" ? "self-center m-auto bg-gray-300 text-black" : ""}
+               ${msg.type === "dialogue" ? "self-center m-auto bg-gray-500 text-white" : ""}
                 ${msg.type === "self" ? "self-end bg-black text-white" : ""}
-                ${msg.type === "member" ? "self-start mr-auto  bg-gray-500 text-black" : ""}
+                ${msg.type === "member" ? "self-start mr-auto bg-gray-100 text-blue-600 " : ""}
                w-fit rounded-md mb-2`}>
                 {msg.message}
               </div>
@@ -207,7 +394,7 @@ export default function App() {
       />
 
       {/* Send Button */}
-      <Button className="bg-black text-white " onClick={sendMessage}>Send</Button>
+      <Button className="bg-black text-white cursor-pointer hover:bg-blue-800 " onClick={sendMessage}>Send</Button>
       </div>
     </div>
     </div>
