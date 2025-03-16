@@ -4,7 +4,6 @@ import { getAuth, GoogleAuthProvider } from "firebase/auth";
 
 
 const firebaseConfig =JSON.parse(import.meta.env.VITE_FirebaseConfig);
-console.log(firebaseConfig)
 
 
 // Initialize Firebase
