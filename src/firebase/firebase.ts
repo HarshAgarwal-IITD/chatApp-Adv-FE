@@ -1,8 +1,9 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
-import {FirebaseConfig} from "../../config"
 
-const firebaseConfig =FirebaseConfig;
+
+const firebaseConfig =JSON.parse(import.meta.env.FirebaseConfig);
+console.log(firebaseConfig)
 
 
 // Initialize Firebase
