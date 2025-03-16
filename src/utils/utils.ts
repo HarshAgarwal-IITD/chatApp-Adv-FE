@@ -1,4 +1,4 @@
-export const BACKEND_URL="http://localhost:3000/";
+export const BACKEND_URL="https://chatapp-advbe-production.up.railway.app/";
 export const SIGNUP_ROUTE='api/auth/signup';
 export const SIGNIN_ROUTE='api/auth/login';
 export const SIGNOUT_ROUTE='api/auth/logout';
