@@ -2,7 +2,8 @@ import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
 
 
-const firebaseConfig =JSON.parse(import.meta.env.FirebaseConfig);
+
+const firebaseConfig =JSON.parse(import.meta.env.VITE_FirebaseConfig);
 console.log(firebaseConfig)
 
 
