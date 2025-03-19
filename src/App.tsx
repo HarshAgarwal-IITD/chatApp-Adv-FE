@@ -9,7 +9,6 @@ import Signup from "./AppComponents/Signup";
 import Logout from "./AppComponents/Logout";
 import axios from "axios"
 
-
 import {
   Popover,
   PopoverContent,
@@ -17,6 +16,8 @@ import {
 } from "@/components/ui/popover"
 import { BACKEND_URL, ROOM_ROUTE } from "./utils/utils";
 import useMessage from "./hooks/useMessages";
+
+
 
 
 
@@ -43,6 +44,9 @@ export default function App() {
   const [username,setUsername]= useState<string>();
   const [roomTitle,setRoomTitle]= useState<string>();
   const messageUse = useMessage({ roomId:roomTitle as string }); // ✅ Use the hook directly
+ 
+
+
 
   useEffect(() => {
  
@@ -62,7 +66,7 @@ export default function App() {
   //check for username
   useEffect(() => {
     const storedUsername = localStorage.getItem("username");
-    if (storedUsername) setUsername(storedUsername);
+    if (storedUsername) setUsername(storedUsername);   
 
     const storedRoomId = localStorage.getItem("roomId");
     if (storedRoomId) {
@@ -92,10 +96,7 @@ export default function App() {
 //check if logged in 
 useEffect(()=>{
  
-    const token = document.cookie
-      .split("; ")
-      .find((row) => row.startsWith("token="))
-      ?.split("=")[1];
+    const token = localStorage.getItem("token");
     if(token){
       setLogin(true)
     }
@@ -108,7 +109,13 @@ useEffect(() => {
 
  if(inRoom)
    { 
-    const ws = new WebSocket('ws://localhost:3000/');
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert('Login to join a room');
+      return;
+    }
+    const ws = new WebSocket('ws://localhost:3000/', [token]);
+    
 
     ws.onopen = () => console.log('WebSocket connected');
 
@@ -171,10 +178,12 @@ useEffect(() => {
     }
     if (roomId?.trim()) {
       try{ const response = await axios.post(BACKEND_URL+ROOM_ROUTE+"create",{
-        roomName:roomId
-      },
-        {withCredentials:true}
-      )
+        roomName:roomId,
+       },{
+        headers: {
+          authorization: localStorage.getItem("token")
+        }
+      })
       console.log(response);
       setInRoom(true);
       alert("Room created successfully");
@@ -208,7 +217,11 @@ useEffect(() => {
   };
   const onJoin=async()=>{
    try{ const response = await axios.post(BACKEND_URL+ROOM_ROUTE+roomId+"/join",
-      {withCredentials:true}
+    {
+    },
+   { headers: {
+      authorization: localStorage.getItem("token")
+    }}
     )
     console.log(response);
     setInRoom(true);
@@ -233,7 +246,9 @@ useEffect(() => {
     try {
       const response = await axios.delete(
         BACKEND_URL + ROOM_ROUTE + roomId + "/exit",
-        { withCredentials: true }
+        { headers: {
+          authorization: localStorage.getItem("token")
+        }}
       );
 
       console.log(response);
@@ -254,7 +269,7 @@ useEffect(() => {
       alert("Error exiting room. See console for details.");
     }
  }
-
+ 
  const handleLogout = () => {
   
     wsRef.current.close();
@@ -263,10 +278,32 @@ useEffect(() => {
   setUsername(undefined);
   setRoomTitle(undefined); // ✅ Clear roomTitle on logout
   setInRoom(false);
+
   localStorage.removeItem("roomId");
   localStorage.removeItem("username");
+  localStorage.removeItem("token");
 };
 
+/**
+ * How to use inline code suggestions with GitHub Copilot:
+ * 
+ * 1. Start typing your code as usual.
+ * 2. GitHub Copilot will automatically suggest code completions.
+ * 3. You can accept a suggestion by pressing `Tab` or `Enter`.
+ * 4. If you want to see more suggestions, press `Ctrl` + `Space`.
+ * 5. You can also cycle through suggestions using the arrow keys.
+ * 6. To dismiss a suggestion, press `Esc`.
+ * 
+ * Example:
+ * 
+ * // Start typing a function
+ * function greet() {
+ *   // GitHub Copilot might suggest the following line:
+ *   console.log("Hello, World!");
+ * }
+ * 
+ * // Press `Tab` to accept the suggestion.
+ */
 
   return (
     
@@ -274,7 +311,7 @@ useEffect(() => {
      
       <div className=" flex md:flex-row flex-col   justify-between m-2">
       <div>
-    {!login && <Signup setLogin={setLogin} setUsername={setUsername}  />}
+    {!login && <Signup setLogin={setLogin} setUsername={setUsername}   />}
     {!login &&   <Signin setLogin={setLogin} setUsername={setUsername} />}
     {login &&   <Logout setLogin={setLogin} setUsername={setUsername} handleLogout={handleLogout} />}
    {/* <Form text="Sign In"/> */}

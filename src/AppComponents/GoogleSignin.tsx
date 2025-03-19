@@ -4,12 +4,13 @@ import { signInWithPopup } from "firebase/auth";
 import axios from "axios";
 import GoogleIcon from "./icons/googleIcon";
 
-export default function GoogleSignIn( {setLoading,setLogin,setMessage,setOpen,setUsername}:
+export default function GoogleSignIn( {setLoading,setLogin,setMessage,setOpen,setUsername,}:
   {setLoading:any,
     setLogin:any,
     setMessage:any,
     setOpen:any,
     setUsername:any,
+    
   }){
    // ✅ Google Sign-In
    const signInWithGoogle = async (
@@ -20,16 +21,19 @@ export default function GoogleSignIn( {setLoading,setLogin,setMessage,setOpen,se
       // 🔥 Sign in with Firebase
       const result = await signInWithPopup(auth, googleProvider);
       console.log(result)
-      const token = await result.user.getIdToken();
+      const googleToken = await result.user.getIdToken();
+     
 
       // 🚀 Send token to backend
       const response = await axios.post(
         `${BACKEND_URL}${GOOGLE_SIGNIN_ROUTE}`,
-        { token },
-        { withCredentials: true }
+        { token: googleToken }
+       
       );
-
+      const JwtToken = response.data.token;
+      console.log("jwttoken",typeof JwtToken)
       console.log("Google sign-in response:", response.data);
+      localStorage.setItem("token", JwtToken);
       setMessage("Google SignIn success");
       setUsername(result.user.displayName)
       setLogin(true);

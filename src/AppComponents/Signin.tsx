@@ -18,7 +18,7 @@ import Loader from "./loader";
 import { useState,useRef } from "react";
 
 
-export default function Signin({setLogin,setUsername }:{setLogin:any,setUsername:any}){
+export default function Signin({setLogin,setUsername  }:{setLogin:any,setUsername:any,}){
     const emailRef = useRef<HTMLInputElement>(null)
     const passwordRef = useRef<HTMLInputElement>(null)
       const [loading, setLoading] = useState(false);
@@ -38,10 +38,15 @@ export default function Signin({setLogin,setUsername }:{setLogin:any,setUsername
         const response = await axios.post(BACKEND_URL + SIGNIN_ROUTE, {
           email: emailRef.current.value,
           password: passwordRef.current.value,
+
          
-        },{withCredentials:true});
+        });
   
         console.log(response);
+        const token = response.data.token;
+        
+        localStorage.setItem("token",token);
+        
         setMessage( "SignIn success");
         setUsername(response.data.username)
         
@@ -97,6 +102,7 @@ export default function Signin({setLogin,setUsername }:{setLogin:any,setUsername
   setMessage={setMessage}
   setOpen={setOpen}
   setUsername={setUsername}
+  
 /></div>
                 {message!=="" ?<div className="px-3 py-1 text-center text-blue-600 text-xl">
             {message}

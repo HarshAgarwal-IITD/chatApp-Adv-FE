@@ -15,7 +15,7 @@ import { BACKEND_URL, SIGNUP_ROUTE } from "@/utils/utils";
 import axios from "axios";
 import Loader from "./loader";
 
-export default function Signup({setLogin,setUsername}:{setLogin:any,setUsername:any}) {
+export default function Signup({setLogin,setUsername}:{setLogin:any,setUsername:any,}) {
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
   const usernameRef = useRef<HTMLInputElement>(null);
@@ -136,6 +136,7 @@ export default function Signup({setLogin,setUsername}:{setLogin:any,setUsername:
   setMessage={setMessage}
   setOpen={setOpen}
   setUsername={setUsername}
+
 />
           </div>
          {message!=="" ?<div className="px-3 py-1 text-center text-blue-600 text-xl">

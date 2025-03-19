@@ -14,16 +14,19 @@ import {
   import Loader from "./loader"
 
 export default function Logout({setLogin,setUsername,handleLogout}:{setLogin:any,setUsername:any,handleLogout:()=>any}){
-    axios.defaults.withCredentials = true;
+  
     const [loading, setLoading] = useState(false);
     const [open, setOpen] = useState(false);
     const [_,setMessage]= useState<String>("");
 
     const logoutUser=async()=>{
         try{
+            const token = localStorage.getItem("token");
             setLoading(true)
-           const response = await axios.post(BACKEND_URL+SIGNOUT_ROUTE,
-            { withCredentials: true });
+           const response = await axios.post(BACKEND_URL+SIGNOUT_ROUTE,{}, { headers: {
+            authorization: token
+          }}
+           );
            console.log(response);
           
            setMessage( "logout success");
