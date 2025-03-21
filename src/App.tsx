@@ -114,7 +114,7 @@ useEffect(() => {
       alert('Login to join a room');
       return;
     }
-    const ws = new WebSocket('wss://https://chatapp-advbe-production-b8a5.up.railway.app/:3000/', [token]);
+    const ws = new WebSocket('wss://https://chatapp-advbe-production-b8a5.up.railway.app/', [token]);
     
 
     ws.onopen = () => console.log('WebSocket connected');
