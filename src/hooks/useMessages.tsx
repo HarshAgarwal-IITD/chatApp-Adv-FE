@@ -15,7 +15,10 @@ export default function useMessage({roomId}:{roomId:string}){
         const fetchMessages = async()=>{
 
             try{
-                const response =await axios.get(BACKEND_URL+ROOM_ROUTE+roomId+'/messages');
+                const response =await axios.get(BACKEND_URL+ROOM_ROUTE+roomId+'/messages',{
+                    headers:{
+                        authorization: localStorage.getItem('token')
+                }});
                 setMessages(response.data.messages)
             }
             catch(e){
