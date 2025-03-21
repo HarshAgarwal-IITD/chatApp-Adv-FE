@@ -9,8 +9,7 @@ import {
   import { Button } from "@/components/ui/button";
 
   import {  useState } from "react";
-  import { BACKEND_URL, SIGNOUT_ROUTE } from "@/utils/utils";
-  import axios from "axios";
+
   import Loader from "./loader"
 
 export default function Logout({setLogin,setUsername,handleLogout}:{setLogin:any,setUsername:any,handleLogout:()=>any}){
@@ -21,13 +20,9 @@ export default function Logout({setLogin,setUsername,handleLogout}:{setLogin:any
 
     const logoutUser=async()=>{
         try{
-            const token = localStorage.getItem("token");
+           
             setLoading(true)
-           const response = await axios.post(BACKEND_URL+SIGNOUT_ROUTE,{}, { headers: {
-            authorization: token
-          }}
-           );
-           console.log(response);
+          
           
            setMessage( "logout success");
            setLogin(false);
